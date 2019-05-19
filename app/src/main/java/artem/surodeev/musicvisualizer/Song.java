@@ -9,7 +9,7 @@ import android.widget.ImageView;
 
 import java.io.IOException;
 
-public class SongPlay extends AppCompatActivity {
+public class Song extends AppCompatActivity {
     String path;
     MediaPlayer player;
     ImageView image;
@@ -19,10 +19,11 @@ public class SongPlay extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_song_play);
+        setContentView(R.layout.activity_song);
 
 
         image = findViewById(R.id.image);
+
         path = getIntent().getStringExtra("path");
         final Uri uri = Uri.parse(path);
         new Thread(new Runnable() {

@@ -19,9 +19,6 @@ import android.widget.Button;
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-
-    private boolean isWav;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                     });
                     alertDialog.show();
                 }else{
-                    Intent intent = new Intent(this, SongPlay.class);
+                    Intent intent = new Intent(this, Song.class);
                     intent.putExtra("path", uri.toString());
                     startActivity(intent);
                 }

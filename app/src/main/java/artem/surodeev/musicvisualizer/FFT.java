@@ -35,7 +35,7 @@ public class FFT {
                     int framesRead = 0;
                     double[] buffer = new double[8192];
                     do {
-                        if(SongPlay.getStatus()){
+                        if(Song.getStatus()){
                             framesRead = wavFile.readFrames(buffer, 4096);
                             double[] y = new double[4096];
                             for (int i = 0; i < y.length; i++) {
@@ -51,7 +51,7 @@ public class FFT {
                             for (int i = 0; i < transform.length; i++) {
                                 double res = transform[i].getReal();
                                 if (!alreadyWas) {
-                                    if (res > 75) {
+                                    if (res > 150) {
                                         playAnim();
                                         alreadyWas = true;
                                     }
