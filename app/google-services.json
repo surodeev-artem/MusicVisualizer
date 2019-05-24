@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "368100440676",
+    "firebase_url": "https://music-visualizer-df386.firebaseio.com",
+    "project_id": "music-visualizer-df386",
+    "storage_bucket": "music-visualizer-df386.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368100440676:android:0edb13afe7cfcd76",
+        "android_client_info": {
+          "package_name": "artem.surodeev.musicvisualizer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "368100440676-unl04eufbhthnkmsdu9quggs5do482e8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "artem.surodeev.musicvisualizer",
+            "certificate_hash": "b98765c19ca4e9e0fe0b03bf82ecbf3bc492ba8f"
+          }
+        },
+        {
+          "client_id": "368100440676-akrt58723up4poohmv5rib1b2n736nct.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7WMB9gBTSbfBX4PR0UJd8z7N3cPUfuZc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "368100440676-akrt58723up4poohmv5rib1b2n736nct.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      },
+      "admob_app_id": "ca-app-pub-2987023260407305~7254335260"
+    }
+  ],
+  "configuration_version": "1"
+}

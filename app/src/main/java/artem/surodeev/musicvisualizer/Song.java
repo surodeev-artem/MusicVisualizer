@@ -1,6 +1,7 @@
 package artem.surodeev.musicvisualizer;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -19,33 +20,26 @@ import android.view.View;
 import java.io.IOException;
 
 public class Song extends AppCompatActivity {
-    private String path;
     private static MediaPlayer mediaPlayer;
     private static boolean musicPlays;
-    private static Canvas canvas;
     private static float startX;
     private static float startY;
     private static float stop;
     private static SurfaceHolder surfaceHolder;
     private static Bitmap logo;
+    private MySurfaceView surfaceView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(new MySurfaceView(this));
+        surfaceView = new MySurfaceView(this);
+        setContentView(surfaceView);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        path = getIntent().getStringExtra("path");
+        String path = getIntent().getStringExtra("path");
         final Uri uri = Uri.parse(path);
         logo = drawableToBitmap(getResources().getDrawable(R.drawable.logo, getTheme()));
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
-                //mediaPlayer.start();
-                //musicPlays = true;
-            }
-        }).start();
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
         FFT.setSongIsPlaying(true);
         try {
             FFT.startFFT(FileUtil.from(getApplicationContext(), uri));
@@ -54,38 +48,48 @@ public class Song extends AppCompatActivity {
         }
     }
 
-    public static void startMusic(){
-        if(mediaPlayer != null && !mediaPlayer.isPlaying()){
-            mediaPlayer.start();
-        }
+    public static void startMusic() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+                    mediaPlayer.start();
+                }
+            }
+        }).start();
     }
 
-    public static void pauseMusic(){
-        if(mediaPlayer != null && mediaPlayer.isPlaying()){
-            mediaPlayer.pause();
-        }
+    public static void pauseMusic() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    mediaPlayer.pause();
+                }
+            }
+        }).start();
     }
 
-    public static void stopMusic(){
-        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+    private static void stopMusic() {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
         }
     }
 
-    public static boolean getStatus(){
+    public static boolean getStatus() {
         return musicPlays;
     }
 
 
-
-    public static void setStatus(boolean status){
+    public static void setStatus(boolean status) {
         musicPlays = status;
     }
 
     @Override
     protected void onDestroy() {
+        stopMusic();
         FFT.setSongIsPlaying(false);
-        if (mediaPlayer != null && mediaPlayer.isPlaying()){
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
         }
         super.onDestroy();
@@ -108,7 +112,7 @@ public class Song extends AppCompatActivity {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             drawThread = new DrawThread(holder);
-            stop = (surfaceHolder.getSurfaceFrame().right >> 1)-10;
+            stop = (surfaceHolder.getSurfaceFrame().right >> 1) - 10;
         }
 
         @Override
@@ -118,7 +122,8 @@ public class Song extends AppCompatActivity {
                 try {
                     drawThread.join();
                     retry = false;
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
             }
         }
 
@@ -128,33 +133,34 @@ public class Song extends AppCompatActivity {
             float y = event.getY();
             float radius = stop / 3;
 
-            if(x >= startX - radius && x <= startX + radius && y > startY - radius && y < startY + radius){
+            if (x >= startX - radius && x <= startX + radius && y > startY - radius && y < startY + radius) {
                 System.out.println(true);
-                if(Song.getStatus()){
+                if (Song.getStatus()) {
                     Song.setStatus(false);
                     Song.pauseMusic();
-                }else{Song.setStatus(true);
+                } else {
+                    Song.setStatus(true);
                     Song.startMusic();
                 }
-            }else{
+            } else {
                 System.out.println(false);
             }
             return true;
         }
     }
 
-    class DrawThread extends Thread{
-        public DrawThread(SurfaceHolder surfaceHolder){
+    class DrawThread extends Thread {
+        DrawThread(SurfaceHolder surfaceHolder) {
             Song.surfaceHolder = surfaceHolder;
             startX = surfaceHolder.getSurfaceFrame().right >> 1;
             startY = surfaceHolder.getSurfaceFrame().bottom >> 1;
         }
     }
 
-    public static Bitmap drawableToBitmap (Drawable drawable) {
+    public static Bitmap drawableToBitmap(Drawable drawable) {
 
         if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable)drawable).getBitmap();
+            return ((BitmapDrawable) drawable).getBitmap();
         }
 
         Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
@@ -164,10 +170,12 @@ public class Song extends AppCompatActivity {
 
         return bitmap;
     }
+
     private static int counter = 0;
-    public static void draw(int[] frs, Paint paint){
-        if(surfaceHolder != null){
-            canvas = surfaceHolder.lockCanvas(null);
+
+    public static void draw(int[] frs, Paint paint) {
+        if (surfaceHolder != null) {
+            Canvas canvas = surfaceHolder.lockCanvas(null);
             synchronized (surfaceHolder) {
                 if (canvas != null) {
                     //canvas.rotate(3F*counter++, startX, startY);
@@ -179,39 +187,24 @@ public class Song extends AppCompatActivity {
                             fr = -fr;
                         }
                         fr *= 50;
-                        if(fr > stop){
+                        if (fr > stop) {
                             fr = (int) stop;
                         }
-                        canvas.rotate(360F/frs.length * i, startX, startY);
+                        canvas.rotate(360F / frs.length * i, startX, startY);
                         canvas.drawRoundRect(startX - 3, startY + fr, startX + 3, startY, 20, 20, paint);
-                        canvas.rotate(-360F/frs.length * i, startX, startY);
+                        canvas.rotate(-360F / frs.length * i, startX, startY);
                         circle.setColor(0xFFC5C5C5);
                         circle.setStyle(Paint.Style.FILL);
-                        canvas.drawCircle(startX, startY, stop/3, circle);
+                        canvas.drawCircle(startX, startY, stop / 3, circle);
                         circle.setStyle(Paint.Style.STROKE);
                         circle.setStrokeWidth(5);
                         circle.setColor(paint.getColor());
-                        canvas.drawCircle(startX, startY, stop/3, circle);
+                        canvas.drawCircle(startX, startY, stop / 3, circle);
+                        canvas.drawBitmap(logo, startX - (logo.getWidth() >> 1), startY - (logo.getHeight() >> 1), new Paint());
                     }
-                    if(counter == 130){
+                    if (counter == 130) {
                         counter = 0;
                     }
-                }
-            }
-            if (canvas != null) {
-                surfaceHolder.unlockCanvasAndPost(canvas);
-            }
-        }
-    }
-
-    public static void drawLogo(int i){
-        if(surfaceHolder != null){
-            canvas = surfaceHolder.lockCanvas(null);
-            synchronized (surfaceHolder) {
-                if (canvas != null) {
-                    canvas.rotate(11.25F*i, startX, startY);
-                    canvas.drawBitmap(logo, startX- (logo.getWidth() >> 1), startY- (logo.getHeight() >> 1), new Paint());
-                    canvas.rotate(-11.25F*i, startX, startY);
                 }
             }
             if (canvas != null) {
