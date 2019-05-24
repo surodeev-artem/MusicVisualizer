@@ -10,17 +10,18 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
 import java.io.IOException;
 
 public class Song extends AppCompatActivity {
-    String path;
-    MediaPlayer mediaPlayer;
-    static boolean musicPlays;
+    private String path;
+    private static MediaPlayer mediaPlayer;
+    private static boolean musicPlays;
     private static Canvas canvas;
     private static float startX;
     private static float startY;
@@ -41,8 +42,8 @@ public class Song extends AppCompatActivity {
             @Override
             public void run() {
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
-                mediaPlayer.start();
-                musicPlays = true;
+                //mediaPlayer.start();
+                //musicPlays = true;
             }
         }).start();
         FFT.setSongIsPlaying(true);
@@ -53,8 +54,32 @@ public class Song extends AppCompatActivity {
         }
     }
 
+    public static void startMusic(){
+        if(mediaPlayer != null && !mediaPlayer.isPlaying()){
+            mediaPlayer.start();
+        }
+    }
+
+    public static void pauseMusic(){
+        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+            mediaPlayer.pause();
+        }
+    }
+
+    public static void stopMusic(){
+        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+            mediaPlayer.stop();
+        }
+    }
+
     public static boolean getStatus(){
         return musicPlays;
+    }
+
+
+
+    public static void setStatus(boolean status){
+        musicPlays = status;
     }
 
     @Override
@@ -66,7 +91,7 @@ public class Song extends AppCompatActivity {
         super.onDestroy();
     }
 
-    public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback {
+    public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback, View.OnTouchListener {
 
         DrawThread drawThread;
 
@@ -83,16 +108,12 @@ public class Song extends AppCompatActivity {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             drawThread = new DrawThread(holder);
-            drawThread.setRunning(true);
-            drawThread.start();
-
             stop = (surfaceHolder.getSurfaceFrame().right >> 1)-10;
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
             boolean retry = true;
-            drawThread.setRunning(false);
             while (retry) {
                 try {
                     drawThread.join();
@@ -100,41 +121,33 @@ public class Song extends AppCompatActivity {
                 } catch (InterruptedException ignored) {}
             }
         }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            float x = event.getX();
+            float y = event.getY();
+            float radius = stop / 3;
+
+            if(x >= startX - radius && x <= startX + radius && y > startY - radius && y < startY + radius){
+                System.out.println(true);
+                if(Song.getStatus()){
+                    Song.setStatus(false);
+                    Song.pauseMusic();
+                }else{Song.setStatus(true);
+                    Song.startMusic();
+                }
+            }else{
+                System.out.println(false);
+            }
+            return true;
+        }
     }
 
     class DrawThread extends Thread{
-        private boolean runFlag = false;
-
-
         public DrawThread(SurfaceHolder surfaceHolder){
             Song.surfaceHolder = surfaceHolder;
             startX = surfaceHolder.getSurfaceFrame().right >> 1;
             startY = surfaceHolder.getSurfaceFrame().bottom >> 1;
-        }
-
-        public void setRunning(boolean run) {
-            runFlag = run;
-        }
-
-        @Override
-        public void run() {
-            while (runFlag) {
-                try {
-                    canvas = surfaceHolder.lockCanvas(null);
-                }
-                finally {
-                    if (canvas != null) {
-                        surfaceHolder.unlockCanvasAndPost(canvas);
-                    }
-                }
-
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            canvas = null;
         }
     }
 
@@ -154,7 +167,6 @@ public class Song extends AppCompatActivity {
     private static int counter = 0;
     public static void draw(int[] frs, Paint paint){
         if(surfaceHolder != null){
-            long time = SystemClock.uptimeMillis();
             canvas = surfaceHolder.lockCanvas(null);
             synchronized (surfaceHolder) {
                 if (canvas != null) {
@@ -166,7 +178,7 @@ public class Song extends AppCompatActivity {
                         if (fr < 0) {
                             fr = -fr;
                         }
-                        fr *= 100;
+                        fr *= 50;
                         if(fr > stop){
                             fr = (int) stop;
                         }
@@ -189,7 +201,6 @@ public class Song extends AppCompatActivity {
             if (canvas != null) {
                 surfaceHolder.unlockCanvasAndPost(canvas);
             }
-            System.out.println(SystemClock.uptimeMillis() - time);
         }
     }
 

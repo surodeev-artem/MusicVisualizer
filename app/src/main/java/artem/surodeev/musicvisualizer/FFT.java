@@ -87,6 +87,8 @@ class FFT {
                             }
                         }
                     }).start();
+                    Song.startMusic();
+                    Song.setStatus(true);
                     do {
                         if(Song.getStatus()){
                             long time = new Date().getTime();
@@ -103,7 +105,7 @@ class FFT {
                             transform = fft.transform(y, TransformType.FORWARD);
                             time = new Date().getTime() - time;
                             if(time <= 100){
-                                Thread.sleep(100 - (time-2));
+                                Thread.sleep(100 - time);
                             }
                         }else{
                             Thread.sleep(1);
@@ -143,6 +145,7 @@ class FFT {
                     startPos+=delta;
                     endPos+=delta;
                 }
+                transform = null;
             }
         }).start();
         return freqs;
