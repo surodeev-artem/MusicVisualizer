@@ -1,9 +1,7 @@
 package artem.surodeev.musicvisualizer;
 
-import android.content.Context;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
+import android.graphics.Color;
+import android.graphics.Paint;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -12,20 +10,16 @@ import org.apache.commons.math3.transform.TransformType;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 
-public class FFT {
+class FFT {
     private static boolean songIsPlaying;
-    private static Context context;
-
-    static Animation enlargeAnim;
-    static Animation shrinkAnim;
-
-    static ImageView imageView;
-
-    public static void setSongIsPlaying(boolean value){
+    private static Complex[] transform;
+    private static Paint paint;
+    static void setSongIsPlaying(boolean value){
         songIsPlaying = value;
     }
-    public static void startFFT(final File file){
+    static void startFFT(final File file){
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -33,11 +27,71 @@ public class FFT {
                 try {
                     wavFile = WavFile.openWavFile(file);
                     int framesRead = 0;
-                    double[] buffer = new double[8192];
+                    double[] buffer = new double[8820];
+                    paint = new Paint();
+                    paint.setColor(Color.argb(255,228,50,50));
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            int red = 228;
+                            int green = 50;
+                            int blue = 50;
+                            int dr = 1,db = 0;
+                            int stage = 0;
+                            while(songIsPlaying){
+                                int color = Color.argb(255, red, green, blue);
+                                paint.setColor(color);
+                                if(red == 228 && blue == 50 && stage == 3) {
+                                    stage = 0;
+                                }else if(red == 228 && blue == 228 && stage == 0){
+                                    stage = 1;
+                                }else if(red == 50 && blue == 228 && stage == 1){
+                                    stage = 2;
+                                }else if(red == 228 && blue == 228 && stage == 2){
+                                    stage = 3;
+                                }
+                                if(stage == 0){
+                                    dr = 0;
+                                    db = 1;
+                                }else if(stage == 1){
+                                    dr = -1;
+                                    db = 0;
+                                }else if(stage == 2){
+                                    dr = 1;
+                                    db = 0;
+                                }else if(stage == 3){
+                                    dr = 0;
+                                    db = -1;
+                                }
+                                red += dr;
+                                blue += db;
+                                try {
+                                    Thread.sleep(10);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                        }
+                    }).start();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while(songIsPlaying){
+                                Song.draw(calcFreq(), paint);
+                                try {
+                                    Thread.sleep(1);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }).start();
                     do {
                         if(Song.getStatus()){
-                            framesRead = wavFile.readFrames(buffer, 4096);
-                            double[] y = new double[4096];
+                            long time = new Date().getTime();
+                            framesRead = wavFile.readFrames(buffer, 4410);
+                            double[] y = new double[16384];
                             for (int i = 0; i < y.length; i++) {
                                 y[i] = 0;
                             }
@@ -46,21 +100,13 @@ public class FFT {
                                 y[counter++] = buffer[i];
                             }
                             FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
-                            Complex[] transform = fft.transform(y, TransformType.FORWARD);
-                            boolean alreadyWas = false;
-                            for (int i = 0; i < transform.length; i++) {
-                                double res = transform[i].getReal();
-                                if (!alreadyWas) {
-                                    if (res > 150) {
-                                        playAnim();
-                                        alreadyWas = true;
-                                    }
-                                }
+                            transform = fft.transform(y, TransformType.FORWARD);
+                            time = new Date().getTime() - time;
+                            if(time <= 100){
+                                Thread.sleep(100 - (time-2));
                             }
-                            Thread.sleep(92, 879819);
                         }else{
-                            imageView.clearAnimation();
-                            Thread.sleep(100);
+                            Thread.sleep(1);
                         }
                     } while (framesRead != 0 && songIsPlaying);
                 } catch (IOException e) {
@@ -74,36 +120,31 @@ public class FFT {
         }).start();
     }
 
-    public static void setContext(Context context){
-        FFT.context = context;
-    }
-
-    public static void setImageView(ImageView imageView){
-        FFT.imageView = imageView;
-    }
-
-    public static void setupAnim(){
-        enlargeAnim = AnimationUtils.loadAnimation(context, R.anim.enlarge);
-        enlargeAnim.setAnimationListener(new Animation.AnimationListener() {
+    public static int[] calcFreq(){
+        final int[] freqs = new int[64];
+        new Thread(new Runnable() {
             @Override
-            public void onAnimationStart(Animation animation) {
-
+            public void run() {
+                for (int i = 0; i < freqs.length; i++) {
+                    freqs[i] = 0;
+                }
+                int delta = 50;
+                int startPos=0;
+                int endPos = 50;
+                for (int i = 0; i < freqs.length; i++) {
+                    for (int j = startPos; j < endPos; j++) {
+                        if(transform == null){
+                            freqs[i] = 0;
+                            continue;
+                        }
+                        freqs[i] += (transform[j].getReal());
+                    }
+                    freqs[i] /= delta;
+                    startPos+=delta;
+                    endPos+=delta;
+                }
             }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                imageView.startAnimation(shrinkAnim);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-        shrinkAnim = AnimationUtils.loadAnimation(context, R.anim.shrink);
-    }
-
-    public static void playAnim(){
-        imageView.startAnimation(enlargeAnim);
+        }).start();
+        return freqs;
     }
 }
